@@ -19,7 +19,7 @@ No existía ningún workflow que reemplazara la tienda por documentación. El pr
 
 Un único mecanismo de publicación: el workflow `.github/workflows/pages.yml`, con despliegue oficial por artefacto (`actions/upload-pages-artifact` + `actions/deploy-pages`).
 
-1. **Se activa** con cada push a la rama de desarrollo (o `main`) que cambie código. Los cambios solo en `docs/` o `*.md` no despliegan. También se puede lanzar a mano (*Run workflow*).
+1. **Se activa** con cada push a la rama de desarrollo (o `main`), incluidos los cambios de documentación. También se puede lanzar a mano (*Run workflow*).
 2. **Prepara los datos:** levanta PostgreSQL 16 temporal, aplica migraciones, carga el catálogo de demostración y 4 pedidos ficticios para el panel.
 3. **Genera el sitio** con `scripts/build-static-demo.mjs`:
    - basePath `/tienda_ropa_lima` y `trailingSlash`.
@@ -50,7 +50,14 @@ Un único mecanismo de publicación: el workflow `.github/workflows/pages.yml`, 
 
 Si Actions está deshabilitado en el repositorio: **Settings → Actions → General → Allow all actions**.
 
-**Nota:** el primer run del workflow (al subir este cambio) puede fallar en el job `deploy` con un mensaje de que Pages no está configurado para GitHub Actions. Es esperado hasta completar el paso 2; luego basta con volver a ejecutarlo.
+**Por qué el paso 2 es imprescindible aunque la tienda ya se vea:** el primer run (`1a31151`) desplegó la tienda correctamente aun con la fuente en "rama". Pero GitHub sigue ejecutando también el build Jekyll de la rama, que publica el README:
+
+| Hora (UTC) | Despliegue |
+| --- | --- |
+| 20:00:16 | Jekyll publicó el README |
+| 20:01:14 | El workflow publicó la tienda (último, es el visible) |
+
+Mientras no se cambie la fuente, ambos compiten en cada push. Gana el último, normalmente la tienda porque su build tarda más, pero el orden no está garantizado. Con Source = GitHub Actions el build Jekyll deja de existir.
 
 ## Después de verificar
 

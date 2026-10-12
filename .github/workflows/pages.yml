@@ -11,7 +11,9 @@ name: Pages (versión de revisión)
 on:
   push:
     branches: [claude/new-session-hbu6rn, main]
-    paths-ignore: ["docs/**", "**/*.md"]
+    # Sin filtro de rutas: mientras Pages siga con fuente "rama", cada push dispara
+    # además el build Jekyll del README; este workflow (más lento) despliega después
+    # y deja la tienda publicada. Con Source = "GitHub Actions" el build Jekyll desaparece.
   workflow_dispatch:
 
 permissions:
