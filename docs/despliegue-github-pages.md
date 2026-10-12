@@ -63,3 +63,10 @@ Mientras no se cambie la fuente, ambos compiten en cada push. Gana el último, n
 
 - La rama `gh-pages` queda obsoleta (con Source = GitHub Actions se ignora). Se puede borrar para evitar confusiones.
 - Para comprobar qué se publicó, revisar el artefacto `github-pages` del run o ejecutar localmente `npm run build:pages && npm run verify:pages`.
+
+## Registro de verificación
+
+| Commit | Workflow "Pages (versión de revisión)" | CI | Build Jekyll de la rama |
+| --- | --- | --- | --- |
+| `1a31151` | ✅ build + verificación + deploy (20:01:14) | ✅ typecheck, 27 pruebas, build | Se ejecutó (20:00:16) → la tienda quedó publicada por desplegarse después |
+| `177d14d` | ✅ (20:05:33) | ✅ | Se ejecutó (20:04:54) → la tienda quedó publicada por desplegarse después |
