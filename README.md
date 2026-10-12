@@ -4,12 +4,19 @@ MVP (Fase 1 del brief) de una tienda de moda con checkout propio, pensada para h
 
 **Stack:** Next.js 15 (App Router) + TypeScript · PostgreSQL + Prisma · Tailwind CSS 4 · Vitest.
 
+## Estado y documentación
+
+- [Fase 0 — Auditoría, arquitectura, riesgos y plan](docs/fase-0-auditoria-y-plan.md)
+- [Informe de pruebas](docs/informe-de-pruebas.md)
+
+**No está listo para cobrar pagos reales:** falta elegir e integrar la pasarela (ver "Integrar la pasarela real"). La marca, el catálogo, los precios y las tarifas de envío del seed son de demostración.
+
 ## Qué incluye
 
 | Área | Funciones |
 | --- | --- |
-| Tienda | Inicio ligero (sin video), novedades, mujer/hombre/unisex, ofertas, categorías, búsqueda; filtros por talla, color, precio y disponibilidad; grilla de 2 columnas en móvil |
-| Producto | Precio en S/ con IGV, disponibilidad por SKU, talla y color obligatorios (no deja agregar combinaciones agotadas), medidas en cm, composición, cuidado, zoom, costo de envío referencial, datos estructurados Product/Offer |
+| Tienda | Inicio ligero (imagen opcional, sin video), novedades, ofertas, más vendidos (solo con ventas reales), compra el look, envíos, métodos de pago, WhatsApp flotante, carrito lateral, mujer/hombre/unisex, ofertas, categorías, búsqueda; filtros por talla, color, precio y disponibilidad; grilla de 2 columnas en móvil |
+| Producto | Relacionados, bloque de envío y cambios, consulta por WhatsApp, precio en S/ con IGV, disponibilidad por SKU, talla y color obligatorios (no deja agregar combinaciones agotadas), medidas en cm, composición, cuidado, zoom, costo de envío referencial, datos estructurados Product/Offer |
 | Carrito y checkout | Carrito persistente, compra sin registro, ubigeo INEI completo (departamento → provincia → distrito), envío calculado por zona antes de pagar, boleta (DNI/CE) o factura (RUC con dígito verificador), cupones, aceptación de términos, consentimiento de marketing opcional |
 | Pedidos | Estados separados: creado, pago pendiente, pago validado, en preparación, enviado, entregado, cancelado, reembolsado. Página de confirmación privada, seguimiento por código + correo/celular |
 | Pagos | Adaptador desacoplado (`PaymentProvider`). Métodos manuales (Yape/Plin por QR, transferencia, contraentrega opcional) que **solo** se confirman cuando un admin registra el n.º de operación verificado. Pasarela de prueba con webhook firmado para desarrollo |

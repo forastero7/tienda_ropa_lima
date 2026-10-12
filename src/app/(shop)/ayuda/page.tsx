@@ -22,7 +22,7 @@ export default async function HelpPage() {
       <h2 className="mt-10 text-xl font-bold">Contacto</h2>
       <div className="mt-3 flex flex-wrap gap-3">
         {store.whatsapp && <a className="btn-primary" href={`https://wa.me/${store.whatsapp}`} target="_blank" rel="noopener noreferrer">WhatsApp</a>}
-        {store.supportEmail && <a className="btn-ghost" href={`mailto:${store.supportEmail}`}>{store.supportEmail}</a>}
+        {process.env.NEXT_PUBLIC_SUPPORT_EMAIL && <a className="btn-ghost" href={`mailto:${store.supportEmail}`}>{store.supportEmail}</a>}
         <Link className="btn-ghost" href="/seguimiento">Seguir mi pedido</Link>
       </div>
     </div>

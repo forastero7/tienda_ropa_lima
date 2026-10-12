@@ -13,12 +13,14 @@ export function ProductBuyBox({
   productName,
   variants,
   sizes,
+  whatsappHref,
   children,
 }: {
   images: Img[];
   productName: string;
   variants: PickerVariant[];
   sizes: string[];
+  whatsappHref?: string;
   children: React.ReactNode;
 }) {
   const [index, setIndex] = useState(0);
@@ -48,6 +50,7 @@ export function ProductBuyBox({
             productName={productName}
             variants={variants}
             sizes={sizes}
+            whatsappHref={whatsappHref}
             onColorChange={(c) => {
               const i = images.findIndex((img) => img.color === c);
               if (i >= 0) setIndex(i);

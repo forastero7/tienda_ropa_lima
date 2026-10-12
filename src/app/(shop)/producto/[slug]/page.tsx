@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ProductGrid } from "@/components/product-card";
 import { ProductBuyBox } from "@/components/product-gallery";
-import { available, getProduct, sortSizes } from "@/lib/catalog";
+import { available, getProduct, getRelated, sortSizes } from "@/lib/catalog";
 import { store } from "@/lib/config";
 import { prisma } from "@/lib/db";
 import { formatPEN } from "@/lib/money";
@@ -27,7 +28,13 @@ export default async function ProductPage({ params }: Props) {
   const product = await getProduct((await params).slug);
   if (!product) notFound();
 
-  const minShipping = await prisma.shippingZone.findFirst({ where: { active: true }, orderBy: { feeCents: "asc" } });
+  const [minShipping, related] = await Promise.all([
+    prisma.shippingZone.findFirst({ where: { active: true }, orderBy: { feeCents: "asc" } }),
+    getRelated(product),
+  ]);
+  const whatsappHref = store.whatsapp
+    ? `https://wa.me/${store.whatsapp}?text=${encodeURIComponent(`Hola, tengo una consulta sobre: ${product.name} (${store.siteUrl}/producto/${product.slug})`)}`
+    : undefined;
   const sizes = sortSizes([...new Set(product.variants.map((v) => v.size))]);
   const variants = product.variants.map((v) => ({
     id: v.id,
@@ -73,6 +80,7 @@ export default async function ProductPage({ params }: Props) {
         images={product.images.map((i) => ({ url: i.url, alt: i.alt, color: i.color }))}
         variants={variants}
         sizes={sizes}
+        whatsappHref={whatsappHref}
       >
         <h1 className="text-2xl font-bold sm:text-3xl">{product.name}</h1>
         <p className="mt-2 text-xl">
@@ -97,16 +105,6 @@ export default async function ProductPage({ params }: Props) {
           <p className="mt-1 text-ink/90">{product.composition}</p>
           <h3 className="mt-6 font-semibold">Cuidado</h3>
           <p className="mt-1 text-ink/90">{product.care}</p>
-          {store.whatsapp && (
-            <a
-              className="btn-ghost mt-6"
-              target="_blank"
-              rel="noopener noreferrer"
-              href={`https://wa.me/${store.whatsapp}?text=${encodeURIComponent(`Hola, tengo una consulta sobre: ${product.name}`)}`}
-            >
-              ¿Dudas con la talla? Escríbenos por WhatsApp
-            </a>
-          )}
         </section>
 
         {measureKeys.length > 0 && (
@@ -140,6 +138,32 @@ export default async function ProductPage({ params }: Props) {
           </section>
         )}
       </div>
+
+      <section className="mt-10 grid gap-4 rounded-lg border border-line bg-card p-5 text-sm sm:grid-cols-2">
+        <div>
+          <h2 className="font-semibold">Envío</h2>
+          <p className="mt-1 text-ink/90">
+            A Lima, Callao y provincias. El costo exacto según tu distrito se muestra en el checkout, antes de pagar. El plazo lo confirma el
+            courier al despachar.
+          </p>
+          <Link href="/legal/envios" className="mt-1 inline-block underline">Política de envíos</Link>
+        </div>
+        <div>
+          <h2 className="font-semibold">Cambios y devoluciones</h2>
+          <p className="mt-1 text-ink/90">
+            Puedes solicitar cambio de talla según nuestra política. Si la prenda llega con fallas, tienes los derechos que reconoce el Código de
+            Protección y Defensa del Consumidor.
+          </p>
+          <Link href="/legal/cambios-y-devoluciones" className="mt-1 inline-block underline">Política de cambios</Link>
+        </div>
+      </section>
+
+      {related.length > 0 && (
+        <section className="mt-12">
+          <h2 className="mb-5 text-2xl font-bold">También te puede gustar</h2>
+          <ProductGrid products={related} />
+        </section>
+      )}
     </div>
   );
 }

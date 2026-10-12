@@ -53,16 +53,18 @@ try {
   rmSync(OUT, { recursive: true, force: true });
   mkdirSync(OUT, { recursive: true });
 
-  const [products, categories, orders] = await Promise.all([
+  const [products, categories, orders, looks] = await Promise.all([
     prisma.product.findMany({ where: { status: "ACTIVE" }, select: { id: true, slug: true } }),
     prisma.category.findMany({ select: { slug: true } }),
     prisma.order.findMany({ select: { id: true }, orderBy: { createdAt: "desc" }, take: 30 }),
+    prisma.look.findMany({ where: { active: true }, select: { slug: true } }),
   ]);
   const allProducts = await prisma.product.findMany({ select: { id: true } });
 
   const shop = [
     "/", "/tienda/", "/novedades/", "/ofertas/", "/mujer/", "/hombre/", "/buscar/", "/carrito/", "/checkout/",
-    "/seguimiento/", "/libro-de-reclamaciones/", "/ayuda/", "/nosotros/", "/demo/pedido/",
+    "/seguimiento/", "/libro-de-reclamaciones/", "/ayuda/", "/nosotros/", "/demo/pedido/", "/looks/",
+    ...looks.map((l) => `/looks/${l.slug}/`),
     ...["terminos", "privacidad", "cookies", "cambios-y-devoluciones", "envios"].map((p) => `/legal/${p}/`),
     ...categories.map((c) => `/categoria/${c.slug}/`),
     ...products.map((p) => `/producto/${p.slug}/`),

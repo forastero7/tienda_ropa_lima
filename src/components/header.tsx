@@ -10,10 +10,11 @@ const NAV = [
   { href: "/hombre", label: "Hombre" },
   { href: "/tienda", label: "Todo" },
   { href: "/ofertas", label: "Ofertas" },
+  { href: "/looks", label: "Looks" },
 ];
 
 export function Header({ storeName }: { storeName: string }) {
-  const { count, ready } = useCart();
+  const { count, ready, openDrawer } = useCart();
   const [open, setOpen] = useState(false);
 
   return (
@@ -46,7 +47,15 @@ export function Header({ storeName }: { storeName: string }) {
               <path d="M20 20l-3.5-3.5" />
             </svg>
           </Link>
-          <Link href="/carrito" className="relative p-2" aria-label={`Carrito, ${count} productos`}>
+          <Link
+            href="/carrito"
+            className="relative p-2"
+            aria-label={`Carrito, ${count} productos`}
+            onClick={(e) => {
+              e.preventDefault();
+              openDrawer();
+            }}
+          >
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
               <path d="M5 8h14l-1.2 12H6.2L5 8z" />
               <path d="M9 8V6a3 3 0 016 0v2" />

@@ -47,15 +47,18 @@ export function Footer() {
             <span className="font-semibold">Libro de Reclamaciones</span>
           </Link>
           <div className="mt-4 space-y-1 text-xs text-muted">
-            {store.legalName && <p>{store.legalName}</p>}
-            {store.ruc && <p>RUC {store.ruc}</p>}
-            {store.legalAddress && <p>{store.legalAddress}</p>}
-            {store.supportEmail && <p>{store.supportEmail}</p>}
+            <p>{store.legalName}</p>
+            <p>RUC {store.ruc}</p>
+            <p>{store.legalAddress}</p>
+            <p>{store.supportEmail}</p>
           </div>
         </div>
       </div>
       <div className="border-t border-line py-4 text-center text-xs text-muted">
-        Precios en soles (S/) con IGV incluido. © {new Date().getFullYear()} {store.legalName || store.name}
+        {store.demoContent && (
+          <p className="mb-1 font-semibold text-warn">Marca provisional y catálogo de demostración: productos, precios y existencias son ficticios.</p>
+        )}
+        Precios en soles (S/) con IGV incluido. © {new Date().getFullYear()} {store.name}
       </div>
     </footer>
   );

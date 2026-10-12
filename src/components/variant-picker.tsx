@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { track } from "@/lib/analytics";
 import { formatPEN } from "@/lib/money";
@@ -21,18 +20,19 @@ export function VariantPicker({
   variants,
   sizes,
   onColorChange,
+  whatsappHref,
 }: {
   productName: string;
   variants: PickerVariant[];
   sizes: string[];
   onColorChange?: (color: string) => void;
+  whatsappHref?: string;
 }) {
-  const { add } = useCart();
+  const { add, openDrawer } = useCart();
   const colors = useMemo(() => [...new Map(variants.map((v) => [v.color, v.colorHex])).entries()], [variants]);
   const firstInStock = variants.find((v) => v.available > 0);
   const [color, setColor] = useState(firstInStock?.color ?? colors[0]?.[0]);
   const [size, setSize] = useState<string | null>(null);
-  const [added, setAdded] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const selected = variants.find((v) => v.color === color && v.size === size) ?? null;
@@ -45,7 +45,6 @@ export function VariantPicker({
 
   const pickColor = (c: string) => {
     setColor(c);
-    setAdded(false);
     onColorChange?.(c);
     const current = variants.find((v) => v.color === c && v.size === size);
     if (!current || current.available === 0) setSize(null);
@@ -56,7 +55,7 @@ export function VariantPicker({
     if (!selected || selected.available === 0) return setError("Esa combinación está agotada.");
     setError(null);
     add(selected.id, 1);
-    setAdded(true);
+    openDrawer();
     track("add_to_cart", {
       value: selected.priceCents / 100,
       items: [{ item_id: selected.sku, item_name: productName, item_variant: `${selected.color} / ${selected.size}`, price: selected.priceCents / 100, quantity: 1 }],
@@ -104,7 +103,6 @@ export function VariantPicker({
                 disabled={out}
                 onClick={() => {
                   setSize(s);
-                  setAdded(false);
                   setError(null);
                 }}
                 aria-pressed={size === s}
@@ -127,11 +125,11 @@ export function VariantPicker({
       <button type="button" onClick={onAdd} className="btn-primary w-full py-4 text-base" disabled={!variants.some((v) => v.available > 0)}>
         {variants.some((v) => v.available > 0) ? `Agregar al carrito${selected ? ` · ${formatPEN(selected.priceCents)}` : ""}` : "Agotado"}
       </button>
-      {added && (
-        <div className="flex items-center justify-between rounded-lg bg-ok/10 px-4 py-3 text-sm" role="status">
-          <span>Agregado al carrito.</span>
-          <Link href="/carrito" className="font-semibold underline">Ver carrito</Link>
-        </div>
+      {whatsappHref && (
+        <a href={whatsappHref} target="_blank" rel="noopener noreferrer" className="btn-ghost w-full py-3.5">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M12 2a10 10 0 00-8.6 15.1L2 22l5-1.3A10 10 0 1012 2zm0 18.2a8.2 8.2 0 01-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1112 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 01-3.3-2.9c-.2-.4.2-.4.7-1.3a.5.5 0 000-.4l-.8-1.9c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 00-.7.3 3 3 0 00-.9 2.2 5.2 5.2 0 001.1 2.7 11.8 11.8 0 004.5 4c1.7.7 2.3.8 3.2.6a2.7 2.7 0 001.8-1.2 2.2 2.2 0 00.1-1.3c0-.1-.2-.2-.5-.3z"/></svg>
+          Consultar por WhatsApp
+        </a>
       )}
     </div>
   );

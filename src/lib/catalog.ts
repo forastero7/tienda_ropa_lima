@@ -1,5 +1,6 @@
 import type { Gender, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { PAID_STATUSES } from "@/lib/orders/status";
 
 const cardInclude = {
   images: { orderBy: { position: "asc" }, take: 2 },
@@ -105,15 +106,69 @@ export async function getProduct(slug: string) {
   });
 }
 
+const lookInclude = {
+  items: { orderBy: { position: "asc" }, include: { product: { include: cardInclude } } },
+} satisfies Prisma.LookInclude;
+
+export type LookWithProducts = Prisma.LookGetPayload<{ include: typeof lookInclude }>;
+
+// Más vendidos según unidades de pedidos PAGADOS en los últimos 90 días.
+// Sin ventas suficientes devuelve null y el Inicio muestra "Destacados" (no se inventan cifras).
+export async function getBestSellers(limit = 8): Promise<ProductWithCard[] | null> {
+  const since = new Date(Date.now() - 90 * 86400_000);
+  const rows = await prisma.$queryRaw<{ productId: string; units: bigint }[]>`
+    SELECT v."productId", SUM(oi."quantity") AS units
+    FROM "OrderItem" oi
+    JOIN "Order" o ON o."id" = oi."orderId"
+    JOIN "Variant" v ON v."id" = oi."variantId"
+    WHERE o."status"::text = ANY(${PAID_STATUSES}) AND o."paidAt" >= ${since}
+    GROUP BY v."productId" ORDER BY units DESC LIMIT ${limit * 2}`;
+  if (rows.length < 4) return null;
+  const products = await prisma.product.findMany({
+    where: { id: { in: rows.map((r) => r.productId) }, status: "ACTIVE" },
+    include: cardInclude,
+  });
+  const rank = new Map(rows.map((r, i) => [r.productId, i]));
+  return products.sort((a, b) => rank.get(a.id)! - rank.get(b.id)!).slice(0, limit);
+}
+
 export async function getHomeData() {
-  const [banner, categories, newest, featured, faqs] = await Promise.all([
+  const [banner, categories, newest, featured, onSale, bestSellers, looks, faqs, zones] = await Promise.all([
     prisma.banner.findFirst({ where: { active: true }, orderBy: { position: "asc" } }),
     prisma.category.findMany({ orderBy: { position: "asc" } }),
     prisma.product.findMany({ where: { status: "ACTIVE", isNew: true }, include: cardInclude, take: 8, orderBy: { createdAt: "desc" } }),
     prisma.product.findMany({ where: { status: "ACTIVE", isFeatured: true }, include: cardInclude, take: 8 }),
+    prisma.product.findMany({ where: { status: "ACTIVE", compareAtCents: { not: null } }, include: cardInclude, take: 4 }),
+    getBestSellers(),
+    prisma.look.findMany({ where: { active: true }, include: lookInclude, orderBy: { position: "asc" }, take: 2 }),
     prisma.faq.findMany({ orderBy: { position: "asc" } }),
+    prisma.shippingZone.findMany({ where: { active: true }, orderBy: { position: "asc" } }),
   ]);
-  return { banner, categories, newest, featured, faqs };
+  return { banner, categories, newest, featured, onSale, bestSellers, looks, faqs, zones };
+}
+
+export async function getLooks() {
+  return prisma.look.findMany({ where: { active: true }, include: lookInclude, orderBy: { position: "asc" } });
+}
+
+export async function getLook(slug: string) {
+  return prisma.look.findFirst({ where: { slug, active: true }, include: lookInclude });
+}
+
+// Relacionados: misma categoría, luego mismo género; disponibles primero.
+export async function getRelated(product: { id: string; categoryId: string; gender: Gender }, limit = 4) {
+  const candidates = await prisma.product.findMany({
+    where: { status: "ACTIVE", id: { not: product.id }, OR: [{ categoryId: product.categoryId }, { gender: product.gender }] },
+    include: cardInclude,
+    take: 24,
+  });
+  return candidates
+    .sort(
+      (a, b) =>
+        Number(b.categoryId === product.categoryId) - Number(a.categoryId === product.categoryId) ||
+        Number(productAvailable(b)) - Number(productAvailable(a)),
+    )
+    .slice(0, limit);
 }
 
 const SIZE_ORDER = ["XXS", "XS", "S", "M", "L", "XL", "XXL", "3XL"];

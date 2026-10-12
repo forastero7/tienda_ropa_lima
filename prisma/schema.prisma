@@ -53,6 +53,7 @@ model Product {
   category     Category       @relation(fields: [categoryId], references: [id])
   images       ProductImage[]
   variants     Variant[]
+  lookItems    LookItem[]
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
 
@@ -358,6 +359,29 @@ model Banner {
   imageUrl String?
   active   Boolean @default(true)
   position Int     @default(0)
+}
+
+// "Compra el look": conjunto curado de prendas que se compran por separado.
+model Look {
+  id          String     @id @default(cuid())
+  slug        String     @unique
+  title       String
+  description String     @default("")
+  imageUrl    String?
+  active      Boolean    @default(true)
+  position    Int        @default(0)
+  items       LookItem[]
+  createdAt   DateTime   @default(now())
+}
+
+model LookItem {
+  lookId    String
+  look      Look    @relation(fields: [lookId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  position  Int     @default(0)
+
+  @@id([lookId, productId])
 }
 
 model Faq {

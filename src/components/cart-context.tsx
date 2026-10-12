@@ -12,6 +12,9 @@ type CartContextValue = {
   setQuantity: (variantId: string, quantity: number) => void;
   remove: (variantId: string) => void;
   clear: () => void;
+  drawerOpen: boolean;
+  openDrawer: () => void;
+  closeDrawer: () => void;
 };
 
 const STORAGE_KEY = "cart:v1";
@@ -32,6 +35,7 @@ function load(): CartLine[] {
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [lines, setLines] = useState<CartLine[]>([]);
   const [ready, setReady] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
     setLines(load());
@@ -68,8 +72,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         persist((prev) => prev.map((l) => (l.variantId === variantId ? { ...l, quantity } : l))),
       remove: (variantId) => persist((prev) => prev.filter((l) => l.variantId !== variantId)),
       clear: () => persist(() => []),
+      drawerOpen,
+      openDrawer: () => setDrawerOpen(true),
+      closeDrawer: () => setDrawerOpen(false),
     }),
-    [lines, ready, persist],
+    [lines, ready, persist, drawerOpen],
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

@@ -5,14 +5,16 @@ import { prisma } from "@/lib/db";
 export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [products, categories] = await Promise.all([
+  const [products, categories, looks] = await Promise.all([
     prisma.product.findMany({ where: { status: "ACTIVE" }, select: { slug: true, updatedAt: true } }),
     prisma.category.findMany({ select: { slug: true } }),
+    prisma.look.findMany({ where: { active: true }, select: { slug: true } }),
   ]);
-  const staticPaths = ["", "/tienda", "/novedades", "/mujer", "/hombre", "/ofertas", "/ayuda", "/libro-de-reclamaciones"];
+  const staticPaths = ["", "/tienda", "/novedades", "/mujer", "/hombre", "/ofertas", "/looks", "/ayuda", "/libro-de-reclamaciones"];
   return [
     ...staticPaths.map((p) => ({ url: `${store.siteUrl}${p}` })),
     ...categories.map((c) => ({ url: `${store.siteUrl}/categoria/${c.slug}` })),
+    ...looks.map((l) => ({ url: `${store.siteUrl}/looks/${l.slug}` })),
     ...products.map((p) => ({ url: `${store.siteUrl}/producto/${p.slug}`, lastModified: p.updatedAt })),
   ];
 }

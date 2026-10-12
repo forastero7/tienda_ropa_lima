@@ -149,6 +149,24 @@ async function main() {
     });
   }
 
+  // Looks de demostración: prendas que combinan, cada una se compra por separado.
+  const looks = [
+    { slug: "urbano-de-fin-de-semana", title: "Urbano de fin de semana", description: "Hoodie, jogger y casaca para salir sin pensarlo.", products: ["hoodie-french-terry", "jogger-cargo", "casaca-rompevientos"] },
+    { slug: "verano-en-lima", title: "Verano en Lima", description: "Lino y algodón para los días de sol.", products: ["vestido-midi-lino", "polo-crop-rib", "short-deportivo"] },
+  ];
+  for (const [position, l] of looks.entries()) {
+    const look = await prisma.look.upsert({
+      where: { slug: l.slug },
+      update: { title: l.title, description: l.description, position },
+      create: { slug: l.slug, title: l.title, description: l.description, position },
+    });
+    await prisma.lookItem.deleteMany({ where: { lookId: look.id } });
+    for (const [i, slug] of l.products.entries()) {
+      const product = await prisma.product.findUniqueOrThrow({ where: { slug } });
+      await prisma.lookItem.create({ data: { lookId: look.id, productId: product.id, position: i } });
+    }
+  }
+
   if ((await prisma.faq.count()) === 0) {
     await prisma.faq.createMany({
       data: [
