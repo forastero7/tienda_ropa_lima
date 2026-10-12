@@ -26,6 +26,10 @@ Resultado: **27/27 en verde**. Typecheck (`tsc --noEmit`) y `next build` sin err
 | Datos del proveedor ausentes se muestran como "[Pendiente: …]" | ✅ |
 | Sin errores de JavaScript ni respuestas 4xx/5xx en el recorrido | ✅ |
 
+## Auditoría de Fase 1
+
+Accesibilidad (axe-core, WCAG 2.2 AA), LCP/CLS en móvil con red y CPU limitadas, y áreas táctiles: ver [`docs/fase-1-auditoria.md`](fase-1-auditoria.md). Resultado: 0 violaciones de accesibilidad, LCP ≤ 1.5 s y CLS ≤ 0.04 tras corregir 4 hallazgos.
+
 ## No cubierto todavía (Fase 4)
 
 - E2E automatizadas en CI (hoy se ejecutan manualmente).

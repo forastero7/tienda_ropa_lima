@@ -90,7 +90,7 @@ export function VariantPicker({
       <fieldset>
         <div className="mb-1 flex items-center justify-between">
           <legend className="label mb-0">Talla</legend>
-          <a href="#medidas" className="text-sm underline">Ver medidas</a>
+          <a href="#medidas" className="-my-2 py-3 text-sm underline">Ver medidas</a>
         </div>
         <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
           {sizes.map((s) => {

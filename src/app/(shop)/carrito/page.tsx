@@ -18,9 +18,12 @@ export default function CartPage() {
     lines.filter((l) => !known.has(l.variantId)).forEach((l) => remove(l.variantId));
   }, [quote, lines, remove]);
 
-  if (ready && lines.length === 0) {
+  // Hasta leer el carrito guardado no se sabe qué mostrar: se reserva el espacio (evita CLS).
+  if (!ready) return <div className="min-h-svh" aria-busy="true" />;
+
+  if (lines.length === 0) {
     return (
-      <div className="container-page py-16 text-center">
+      <div className="container-page min-h-svh py-16 text-center">
         <h1 className="text-2xl font-bold">Tu carrito está vacío</h1>
         <Link href="/tienda" className="btn-primary mt-6">Ver productos</Link>
       </div>
@@ -28,7 +31,7 @@ export default function CartPage() {
   }
 
   return (
-    <div className="container-page py-8">
+    <div className="container-page min-h-svh py-8">
       <h1 className="text-3xl font-black tracking-tight">Carrito</h1>
       <div className="mt-6 grid gap-8 lg:grid-cols-[1fr_340px]">
         <ul className="divide-y divide-line rounded-lg border border-line bg-card">

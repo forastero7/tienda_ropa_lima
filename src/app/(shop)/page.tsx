@@ -13,7 +13,7 @@ function SectionHeader({ title, href, linkLabel = "Ver todo" }: { title: string;
   return (
     <div className="mb-5 flex items-end justify-between">
       <h2 className="text-2xl font-bold">{title}</h2>
-      {href && <Link href={href} className="text-sm underline">{linkLabel}</Link>}
+      {href && <Link href={href} className="-my-2 py-3 text-sm underline">{linkLabel}</Link>}
     </div>
   );
 }

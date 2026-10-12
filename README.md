@@ -7,6 +7,7 @@ MVP (Fase 1 del brief) de una tienda de moda con checkout propio, pensada para h
 ## Estado y documentación
 
 - [Fase 0 — Auditoría, arquitectura, riesgos y plan](docs/fase-0-auditoria-y-plan.md)
+- [Auditoría de la Fase 1](docs/fase-1-auditoria.md)
 - [Informe de pruebas](docs/informe-de-pruebas.md)
 
 **No está listo para cobrar pagos reales:** falta elegir e integrar la pasarela (ver "Integrar la pasarela real"). La marca, el catálogo, los precios y las tarifas de envío del seed son de demostración.

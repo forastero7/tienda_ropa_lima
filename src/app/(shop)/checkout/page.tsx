@@ -83,9 +83,12 @@ export default function CheckoutPage() {
     if (quote && method && !quote.methods.some((m) => m.id === method)) setMethod("");
   }, [quote, method]);
 
-  if (ready && lines.length === 0 && !submitting) {
+  // Hasta leer el carrito guardado no se sabe qué mostrar: se reserva el espacio (evita CLS).
+  if (!ready) return <div className="min-h-svh" aria-busy="true" />;
+
+  if (lines.length === 0 && !submitting) {
     return (
-      <div className="container-page py-16 text-center">
+      <div className="container-page min-h-svh py-16 text-center">
         <h1 className="text-2xl font-bold">Tu carrito está vacío</h1>
         <Link href="/tienda" className="btn-primary mt-6">Ver productos</Link>
       </div>
@@ -134,7 +137,7 @@ export default function CheckoutPage() {
   const fe = (k: string) => fieldErrors[k];
 
   return (
-    <div className="container-page py-8">
+    <div className="container-page min-h-svh py-8">
       <h1 className="text-3xl font-black tracking-tight">Finalizar compra</h1>
       <form onSubmit={submit} className="mt-6 grid gap-8 lg:grid-cols-[1fr_360px]" noValidate>
         <div className="space-y-8">
@@ -275,8 +278,8 @@ export default function CheckoutPage() {
               <dt>Total</dt>
               <dd>{quote?.shipping ? formatPEN(quote.totalCents) : "—"}</dd>
             </div>
-            <p className="text-xs text-muted">Precios en soles con IGV incluido.</p>
           </dl>
+          <p className="text-xs text-muted">Precios en soles con IGV incluido.</p>
 
           <label className="flex gap-2">
             <input type="checkbox" checked={acceptTerms} onChange={(e) => setAcceptTerms(e.target.checked)} className="mt-0.5" />
