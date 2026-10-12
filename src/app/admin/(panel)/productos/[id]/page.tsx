@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ActionForm } from "@/components/action-form";
+import { withBase } from "@/lib/base-path";
 import { prisma } from "@/lib/db";
 import { centsToDecimal } from "@/lib/money";
 import { saveProduct, saveVariant } from "../actions";
@@ -74,7 +75,7 @@ export default async function ProductEdit({ params }: { params: Promise<{ id: st
         <div className="flex flex-wrap gap-2">
           {product.images.map((i) => (
             // eslint-disable-next-line @next/next/no-img-element
-            <img key={i.id} src={i.url} alt={i.alt} className="h-28 w-22 rounded border border-line object-cover" />
+            <img key={i.id} src={withBase(i.url)} alt={i.alt} className="h-28 w-22 rounded border border-line object-cover" />
           ))}
         </div>
       </section>

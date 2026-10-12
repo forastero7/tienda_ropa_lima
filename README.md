@@ -78,6 +78,16 @@ El resto (idempotencia, conciliación con el pedido, stock, estados, pagos tard�
 - Las fotos reales deben subirse a un almacenamiento de imágenes (S3/R2/Cloudinary) y referenciarse por URL en el CSV; si son de un dominio externo, añadirlo a `images.remotePatterns` en `next.config.ts`.
 - `PAYMENTS_SANDBOX_ENABLED` no tiene efecto en producción.
 
+## Versión de revisión en GitHub Pages
+
+GitHub Pages solo sirve archivos estáticos, así que existe una versión de revisión generada desde la app real:
+
+```bash
+npm run build:pages   # requiere la base con el seed; genera out-static/
+```
+
+El script construye con `NEXT_PUBLIC_BASE_PATH=/tienda_ropa_lima` y `NEXT_PUBLIC_STATIC_DEMO=1`, guarda cada página como HTML y exporta una foto del catálogo (`demo-data.json`). En esa versión el carrito, el checkout, el seguimiento y el Libro de Reclamaciones se simulan en el navegador (sin cobros ni datos guardados), los filtros muestran el catálogo completo y el panel es de solo lectura. Se publica en la rama `gh-pages`.
+
 ## Formato CSV de catálogo
 
 Una fila por SKU; las filas con el mismo `slug` forman un producto:

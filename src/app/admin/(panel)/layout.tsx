@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { DemoBanner } from "@/components/demo-banner";
 import { requireAdmin } from "@/lib/auth/admin";
 import { logoutAction } from "../login/actions";
 
@@ -33,7 +34,10 @@ export default async function PanelLayout({ children }: { children: React.ReactN
           <form action={logoutAction}><button className="mt-2 underline">Cerrar sesión</button></form>
         </div>
       </aside>
-      <div className="min-w-0 p-4 sm:p-6">{children}</div>
+      <div className="min-w-0">
+        <DemoBanner admin />
+        <div className="p-4 sm:p-6">{children}</div>
+      </div>
     </div>
   );
 }

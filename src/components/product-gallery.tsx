@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { withBase } from "@/lib/base-path";
 import { ProductImage } from "./product-image";
 import { VariantPicker, type PickerVariant } from "./variant-picker";
 
@@ -58,7 +59,7 @@ export function ProductBuyBox({
         <div role="dialog" aria-modal="true" aria-label="Imagen ampliada" className="fixed inset-0 z-50 overflow-auto bg-black/90" onClick={() => setZoom(false)}>
           <button className="fixed top-3 right-3 rounded-full bg-white px-3 py-1 text-sm" onClick={() => setZoom(false)}>Cerrar</button>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={current.url} alt={current.alt || productName} className="mx-auto min-h-full w-[160%] max-w-none sm:w-auto sm:max-w-3xl" />
+          <img src={withBase(current.url)} alt={current.alt || productName} className="mx-auto min-h-full w-[160%] max-w-none sm:w-auto sm:max-w-3xl" />
         </div>
       )}
     </div>

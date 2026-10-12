@@ -2,11 +2,13 @@
 
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect } from "react";
-import { findOrder } from "./actions";
+import { STATIC_DEMO } from "@/lib/base-path";
+import { demoFindOrder } from "@/lib/demo-api";
+import { findOrder, type TrackState } from "./actions";
 
 export default function TrackingPage() {
   const router = useRouter();
-  const [state, action, pending] = useActionState(findOrder, null);
+  const [state, action, pending] = useActionState<TrackState, FormData>(STATIC_DEMO ? (demoFindOrder as typeof findOrder) : findOrder, null);
   useEffect(() => {
     if (state?.url) router.push(state.url);
   }, [state, router]);

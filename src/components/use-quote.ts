@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { apiFetch } from "@/lib/api-client";
 import type { CartLine } from "./cart-context";
 
 export type QuoteLine = {
@@ -45,7 +46,7 @@ export function useQuote(lines: CartLine[], ready: boolean, ubigeo?: string | nu
     }
     const ctrl = new AbortController();
     setLoading(true);
-    fetch("/api/cart/quote", {
+    apiFetch("/api/cart/quote", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ lines, ubigeo: ubigeo || null, couponCode: couponCode || null }),

@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { withBase } from "@/lib/base-path";
 
 // Las fotos reales pasan por el optimizador de Next (AVIF/WebP); los SVG se sirven tal cual.
 export function ProductImage({
@@ -18,7 +19,7 @@ export function ProductImage({
   return (
     <div className={`relative aspect-[4/5] overflow-hidden bg-line ${className}`}>
       <Image
-        src={src}
+        src={withBase(src)}
         alt={alt}
         fill
         sizes={sizes}

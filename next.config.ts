@@ -10,6 +10,9 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  basePath: process.env.NEXT_PUBLIC_BASE_PATH || undefined,
+  // En la versión estática cada página se guarda como carpeta/index.html.
+  trailingSlash: process.env.NEXT_PUBLIC_STATIC_DEMO === "1",
   images: {
     formats: ["image/avif", "image/webp"],
   },

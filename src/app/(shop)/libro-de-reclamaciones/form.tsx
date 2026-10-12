@@ -1,12 +1,14 @@
 "use client";
 
 import { useActionState } from "react";
+import { STATIC_DEMO } from "@/lib/base-path";
+import { demoSubmitComplaint } from "@/lib/demo-api";
 import { submitComplaint } from "./actions";
 
 const dateFmt = new Intl.DateTimeFormat("es-PE", { dateStyle: "long", timeStyle: "short", timeZone: "America/Lima" });
 
 export function ComplaintForm({ provider }: { provider: { legalName: string; ruc: string; address: string } }) {
-  const [state, action, pending] = useActionState(submitComplaint, null);
+  const [state, action, pending] = useActionState(STATIC_DEMO ? (demoSubmitComplaint as typeof submitComplaint) : submitComplaint, null);
 
   if (state?.ok) {
     const d = state.data;

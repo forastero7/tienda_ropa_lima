@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useCart } from "@/components/cart-context";
+import { apiFetch } from "@/lib/api-client";
+import { withBase } from "@/lib/base-path";
 import { useQuote } from "@/components/use-quote";
 import { track } from "@/lib/analytics";
 import { formatPEN } from "@/lib/money";
@@ -15,7 +17,7 @@ function usePlaces(query: string | null) {
   useEffect(() => {
     if (query === null) return setPlaces([]);
     let alive = true;
-    fetch(`/api/ubigeo${query}`)
+    apiFetch(`/api/ubigeo${query}`)
       .then((r) => r.json())
       .then((d) => alive && setPlaces(d));
     return () => {
@@ -97,7 +99,7 @@ export default function CheckoutPage() {
     setSubmitting(true);
     const source = new URLSearchParams(window.location.search).get("utm_source") ?? sessionStorage.getItem("utm_source");
     try {
-      const res = await fetch("/api/orders", {
+      const res = await apiFetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -121,7 +123,7 @@ export default function CheckoutPage() {
         return;
       }
       clear();
-      if (data.next?.type === "redirect") window.location.assign(data.next.url);
+      if (data.next?.type === "redirect") window.location.assign(withBase(data.next.url));
       else router.push(data.confirmationUrl);
     } catch {
       setError("Problema de conexión. Revisa tu internet e intenta de nuevo: no se te cobrará dos veces.");

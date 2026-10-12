@@ -13,6 +13,7 @@
     "db:seed": "tsx prisma/seed.ts",
     "admin:create": "tsx scripts/create-admin.ts",
     "orders:expire": "tsx scripts/expire-orders.ts",
+    "build:pages": "node scripts/build-static-demo.mjs out-static",
     "postinstall": "prisma generate"
   },
   "dependencies": {

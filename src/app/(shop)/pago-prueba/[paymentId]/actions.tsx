@@ -1,14 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import { apiFetch } from "@/lib/api-client";
+import { withBase } from "@/lib/base-path";
 
 export function SandboxActions({ paymentId }: { paymentId: string }) {
   const [busy, setBusy] = useState(false);
   const run = async (outcome: "approve" | "decline") => {
     setBusy(true);
-    const res = await fetch("/api/payments/sandbox", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ paymentId, outcome }) });
+    const res = await apiFetch("/api/payments/sandbox", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ paymentId, outcome }) });
     const data = await res.json();
-    window.location.assign(data.confirmationUrl ?? "/");
+    window.location.assign(withBase(data.confirmationUrl ?? "/"));
   };
   return (
     <div className="mt-6 grid gap-2">
