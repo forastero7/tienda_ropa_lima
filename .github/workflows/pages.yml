@@ -1,0 +1,84 @@
+# Publica la VERSIÓN DE REVISIÓN de la tienda en GitHub Pages.
+#
+# GitHub Pages solo sirve archivos estáticos: este workflow levanta PostgreSQL
+# temporal, carga el catálogo de demostración, genera la tienda con
+# scripts/build-static-demo.mjs (carrito y checkout simulados en el navegador,
+# sin cobros reales) y publica únicamente esa carpeta. Nunca publica el README.
+#
+# Requisito único en GitHub: Settings → Pages → Source = "GitHub Actions".
+name: Pages (versión de revisión)
+
+on:
+  push:
+    branches: [claude/new-session-hbu6rn, main]
+    paths-ignore: ["docs/**", "**/*.md"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Un solo despliegue a la vez; si llega uno nuevo, el anterior en curso se cancela.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: tienda
+          POSTGRES_PASSWORD: tienda
+          POSTGRES_DB: tienda_demo
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U tienda" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://tienda:tienda@localhost:5432/tienda_demo
+      NEXT_PUBLIC_BASE_PATH: /${{ github.event.repository.name }}
+      NEXT_PUBLIC_SITE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
+      NEXT_PUBLIC_STORE_NAME: Marca Demo
+      NEXT_PUBLIC_DEMO_CONTENT: "1"
+      # Sin datos comerciales ni WhatsApp reales: el sitio muestra "[Pendiente: …]".
+      NEXT_PUBLIC_WHATSAPP: ""
+      NEXT_PUBLIC_GA_ID: ""
+      # Solo para generar pedidos ficticios del panel de demostración.
+      YAPE_PLIN_PHONE: "900000000"
+      BANK_TRANSFER_INSTRUCTIONS: "Cuenta de ejemplo"
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Secreto efímero para firmar la captura del panel (no se publica)
+        run: echo "ADMIN_SESSION_SECRET=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+      - name: Base de datos de demostración
+        run: |
+          npx prisma migrate deploy
+          npx tsx prisma/seed.ts
+          npx tsx scripts/seed-demo-orders.ts
+      - name: Generar sitio estático
+        run: node scripts/build-static-demo.mjs out-static
+      - name: Verificar index.html, rutas y recursos
+        run: node scripts/verify-static-site.mjs out-static "$NEXT_PUBLIC_BASE_PATH"
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: out-static
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

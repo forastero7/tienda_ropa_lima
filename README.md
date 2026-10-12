@@ -88,13 +88,17 @@ El resto (idempotencia, conciliación con el pedido, stock, estados, pagos tard�
 
 ## Versión de revisión en GitHub Pages
 
-GitHub Pages solo sirve archivos estáticos, así que existe una versión de revisión generada desde la app real:
+GitHub Pages solo sirve archivos estáticos, así que se publica una **versión de revisión** generada desde la app real. La publica el workflow [`.github/workflows/pages.yml`](.github/workflows/pages.yml) en cada push. El workflow levanta PostgreSQL temporal, carga el catálogo y pedidos de demostración, genera el sitio con basePath `/tienda_ropa_lima`, lo verifica y lo despliega como artefacto. Nunca publica el README.
+
+En esa versión el carrito, el checkout, el seguimiento y el Libro de Reclamaciones se simulan en el navegador (sin cobros ni datos guardados), los filtros muestran el catálogo completo y el panel es de solo lectura.
+
+Requisito único: **Settings → Pages → Source = "GitHub Actions"**. Diagnóstico e instrucciones: [docs/despliegue-github-pages.md](docs/despliegue-github-pages.md).
+
+Para generar y revisar localmente (requiere la base con el seed):
 
 ```bash
-npm run build:pages   # requiere la base con el seed; genera out-static/
+npm run build:pages && npm run verify:pages
 ```
-
-El script construye con `NEXT_PUBLIC_BASE_PATH=/tienda_ropa_lima` y `NEXT_PUBLIC_STATIC_DEMO=1`, guarda cada página como HTML y exporta una foto del catálogo (`demo-data.json`). En esa versión el carrito, el checkout, el seguimiento y el Libro de Reclamaciones se simulan en el navegador (sin cobros ni datos guardados), los filtros muestran el catálogo completo y el panel es de solo lectura. Se publica en la rama `gh-pages`.
 
 ## Formato CSV de catálogo
 

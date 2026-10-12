@@ -14,6 +14,7 @@
     "admin:create": "tsx scripts/create-admin.ts",
     "orders:expire": "tsx scripts/expire-orders.ts",
     "build:pages": "node scripts/build-static-demo.mjs out-static",
+    "verify:pages": "node scripts/verify-static-site.mjs out-static",
     "postinstall": "prisma generate"
   },
   "dependencies": {
