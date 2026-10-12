@@ -1,0 +1,11 @@
+User-Agent: *
+Allow: /
+Disallow: /admin
+Disallow: /api
+Disallow: /checkout
+Disallow: /carrito
+Disallow: /pedido
+Disallow: /pago-prueba
+Disallow: /buscar
+
+Sitemap: http://localhost:3000/sitemap.xml
