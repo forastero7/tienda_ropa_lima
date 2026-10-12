@@ -1,0 +1,410 @@
+// Modelo de datos de la tienda. Montos en céntimos de sol (Int) para evitar
+// errores de redondeo; los precios publicados incluyen IGV.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ───────────────────────────── Catálogo ─────────────────────────────
+
+enum Gender {
+  MUJER
+  HOMBRE
+  UNISEX
+}
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+model Category {
+  id        String    @id @default(cuid())
+  slug      String    @unique
+  name      String
+  position  Int       @default(0)
+  products  Product[]
+  createdAt DateTime  @default(now())
+}
+
+model Product {
+  id           String         @id @default(cuid())
+  slug         String         @unique
+  name         String
+  description  String         @default("")
+  composition  String         @default("") // composición de tela
+  care         String         @default("") // cuidado
+  gender       Gender         @default(UNISEX)
+  status       ProductStatus  @default(DRAFT)
+  priceCents   Int // precio base en céntimos, IGV incluido
+  compareAtCents Int? // precio anterior (oferta)
+  weightGrams  Int            @default(400)
+  isNew        Boolean        @default(false)
+  isFeatured   Boolean        @default(false)
+  // Medidas por talla en cm: { "M": { "Pecho": 52, "Largo": 70 }, ... }
+  measurements Json           @default("{}")
+  categoryId   String
+  category     Category       @relation(fields: [categoryId], references: [id])
+  images       ProductImage[]
+  variants     Variant[]
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@index([status, categoryId])
+}
+
+model ProductImage {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url       String
+  alt       String  @default("")
+  color     String? // si la foto corresponde a un color concreto
+  position  Int     @default(0)
+}
+
+// Cada combinación talla/color es un SKU único con su propio stock.
+model Variant {
+  id         String          @id @default(cuid())
+  sku        String          @unique
+  productId  String
+  product    Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  size       String
+  color      String
+  colorHex   String          @default("#cccccc")
+  priceCents Int? // sobrescribe el precio del producto si se define
+  stock      Int             @default(0) // unidades físicas en almacén
+  reserved   Int             @default(0) // unidades apartadas por checkouts sin pagar
+  lowStockAt Int             @default(2)
+  active     Boolean         @default(true)
+  position   Int             @default(0)
+  movements  StockMovement[]
+  orderItems OrderItem[]
+
+  @@unique([productId, size, color])
+}
+
+enum StockMovementType {
+  IMPORT // carga masiva / ajuste inicial
+  ADJUSTMENT // ajuste manual
+  SALE // pago confirmado
+  RETURN // devolución que reingresa
+}
+
+model StockMovement {
+  id        String            @id @default(cuid())
+  variantId String
+  variant   Variant           @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  type      StockMovementType
+  quantity  Int // positivo entra, negativo sale
+  note      String            @default("")
+  orderId   String?
+  actorId   String?
+  createdAt DateTime          @default(now())
+
+  @@index([variantId, createdAt])
+}
+
+// ───────────────────────────── Envíos ─────────────────────────────
+
+// Zona de envío definida por prefijos de ubigeo: "15" departamento,
+// "1501" provincia, "150101" distrito. Gana el prefijo más específico.
+model ShippingZone {
+  id             String   @id @default(cuid())
+  name           String
+  ubigeoPrefixes String[]
+  feeCents       Int
+  perKgCents     Int      @default(0) // adicional por kg sobre el primero
+  freeOverCents  Int? // envío gratis desde este subtotal
+  etaText        String   @default("Plazo confirmado por el courier al despachar")
+  codAllowed     Boolean  @default(false) // contraentrega habilitada
+  active         Boolean  @default(true)
+  position       Int      @default(0)
+}
+
+// ───────────────────────────── Promociones ─────────────────────────────
+
+enum DiscountType {
+  PERCENT
+  FIXED
+}
+
+model Coupon {
+  id             String       @id @default(cuid())
+  code           String       @unique
+  type           DiscountType
+  value          Int // porcentaje (1-100) o céntimos
+  minSubtotalCents Int        @default(0)
+  startsAt       DateTime?
+  endsAt         DateTime?
+  maxUses        Int?
+  usedCount      Int          @default(0)
+  active         Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+}
+
+// ───────────────────────────── Pedidos ─────────────────────────────
+
+enum OrderStatus {
+  CREATED // pedido creado
+  PAYMENT_PENDING // pago pendiente (esperando pasarela o verificación)
+  PAID // pago validado
+  PREPARING // preparado / en preparación
+  SHIPPED // enviado
+  DELIVERED // entregado
+  CANCELLED // cancelado (incluye caducidad por falta de pago)
+  REFUNDED // reembolsado
+}
+
+enum DocumentType {
+  BOLETA
+  FACTURA
+}
+
+model Order {
+  id                String       @id @default(cuid())
+  code              String       @unique // código visible para el cliente
+  accessToken       String       @unique // enlace privado de confirmación
+  idempotencyKey    String       @unique
+  status            OrderStatus  @default(CREATED)
+
+  // Contacto
+  email             String
+  phone             String
+  fullName          String
+
+  // Entrega
+  ubigeo            String
+  department        String
+  province          String
+  district          String
+  address           String
+  reference         String       @default("")
+  shippingZoneId    String?
+  shippingZoneName  String       @default("")
+  shippingEta       String       @default("")
+  courier           String?
+  trackingNumber    String?
+
+  // Comprobante
+  documentType      DocumentType @default(BOLETA)
+  documentNumber    String       @default("") // DNI/CE para boleta, RUC para factura
+  businessName      String? // razón social (factura)
+  invoiceIssued     Boolean      @default(false)
+  invoiceReference  String?
+
+  // Montos (céntimos)
+  subtotalCents     Int
+  discountCents     Int          @default(0)
+  shippingCents     Int
+  totalCents        Int
+  currency          String       @default("PEN")
+  couponCode        String?
+
+  paymentMethod     String // id del método elegido
+  reservationExpiresAt DateTime?
+  stockReleased     Boolean      @default(false)
+  stockCommitted    Boolean      @default(false)
+
+  marketingConsent  Boolean      @default(false)
+  source            String? // utm_source u origen
+  notes             String       @default("")
+
+  items             OrderItem[]
+  payments          Payment[]
+  events            OrderEvent[]
+  refunds           Refund[]
+
+  paidAt            DateTime?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  @@index([status, createdAt])
+  @@index([email])
+}
+
+model OrderItem {
+  id          String  @id @default(cuid())
+  orderId     String
+  order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  variantId   String
+  variant     Variant @relation(fields: [variantId], references: [id])
+  // Copia de los datos al momento de la compra
+  sku         String
+  productName String
+  size        String
+  color       String
+  unitCents   Int
+  quantity    Int
+}
+
+// Historial de estados visible en el seguimiento.
+model OrderEvent {
+  id        String       @id @default(cuid())
+  orderId   String
+  order     Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  status    OrderStatus
+  note      String       @default("")
+  actorId   String?
+  createdAt DateTime     @default(now())
+
+  @@index([orderId, createdAt])
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  EXPIRED
+  REFUNDED
+  REQUIRES_REVIEW // llegó un cobro para un pedido que ya no estaba esperando pago
+}
+
+model Payment {
+  id           String        @id @default(cuid())
+  orderId      String
+  order        Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  provider     String // "manual", "sandbox", "culqi", ...
+  method       String // "card", "yape", "transfer", ...
+  providerRef  String? // id de cargo / transacción del proveedor
+  amountCents  Int
+  currency     String        @default("PEN")
+  status       PaymentStatus @default(PENDING)
+  // Para pagos manuales: quién validó y con qué referencia (n.º de operación)
+  verifiedById String?
+  verifiedNote String?
+  raw          Json? // respuesta del proveedor SIN datos de tarjeta
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@unique([provider, providerRef])
+}
+
+model Refund {
+  id          String   @id @default(cuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  amountCents Int
+  reason      String
+  restocked   Boolean  @default(false)
+  actorId     String?
+  createdAt   DateTime @default(now())
+}
+
+// Registro de webhooks recibidos para idempotencia y conciliación.
+model WebhookEvent {
+  id         String   @id @default(cuid())
+  provider   String
+  eventId    String
+  type       String
+  payload    Json
+  processed  Boolean  @default(false)
+  error      String?
+  receivedAt DateTime @default(now())
+
+  @@unique([provider, eventId])
+}
+
+// ───────────────────────────── Libro de Reclamaciones ─────────────────────────────
+
+enum ComplaintType {
+  RECLAMO // disconformidad con el producto o servicio
+  QUEJA // disconformidad con la atención
+}
+
+enum ComplaintStatus {
+  OPEN
+  ANSWERED
+}
+
+model Complaint {
+  id             String          @id @default(cuid())
+  number         String          @unique // correlativo AAAA-000001
+  type           ComplaintType
+  fullName       String
+  documentType   String // DNI, CE, PASAPORTE
+  documentNumber String
+  address        String
+  phone          String
+  email          String
+  guardianName   String? // padre/madre si es menor de edad
+  goodType       String // PRODUCTO / SERVICIO
+  orderCode      String?
+  amountCents    Int?
+  goodDescription String
+  detail         String
+  request        String // pedido del consumidor
+  status         ComplaintStatus @default(OPEN)
+  response       String?
+  respondedAt    DateTime?
+  responseDueAt  DateTime
+  createdAt      DateTime        @default(now())
+}
+
+// ───────────────────────────── Contenido ─────────────────────────────
+
+model Banner {
+  id       String  @id @default(cuid())
+  title    String
+  subtitle String  @default("")
+  ctaLabel String  @default("Ver colección")
+  ctaHref  String  @default("/novedades")
+  imageUrl String?
+  active   Boolean @default(true)
+  position Int     @default(0)
+}
+
+model Faq {
+  id       String @id @default(cuid())
+  question String
+  answer   String
+  position Int    @default(0)
+}
+
+// ───────────────────────────── Administración ─────────────────────────────
+
+enum AdminRole {
+  OWNER // todo, incluida gestión de usuarios
+  ADMIN // catálogo, pedidos, validación de pagos, reembolsos
+  OPERATOR // preparar y despachar pedidos
+}
+
+model AdminUser {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  name         String
+  passwordHash String
+  role         AdminRole  @default(OPERATOR)
+  totpSecret   String? // secreto TOTP (base32)
+  totpEnabled  Boolean    @default(false)
+  active       Boolean    @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime   @default(now())
+  auditLogs    AuditLog[]
+}
+
+model AuditLog {
+  id        String     @id @default(cuid())
+  actorId   String?
+  actor     AdminUser? @relation(fields: [actorId], references: [id])
+  action    String
+  entity    String
+  entityId  String?
+  data      Json?
+  createdAt DateTime   @default(now())
+
+  @@index([entity, entityId])
+  @@index([createdAt])
+}
+
+// Contador simple para correlativos (pedidos, reclamaciones).
+model Counter {
+  key   String @id
+  value Int    @default(0)
+}
